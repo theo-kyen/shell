@@ -53,3 +53,8 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# lex/yacc generated files
+y.tab.*
+lex.yy.c
+y.output

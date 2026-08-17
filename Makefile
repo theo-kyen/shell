@@ -7,10 +7,9 @@ make: $(OBJ)
 	gcc main.c -o main.exe $^ -g
 
 lex:
-	yacc -d parser.y
+	yacc -v -d parser.y -Wcounterexamples
 	lex scanner.l
-	cc lex.yy.c -ll
-	gcc lex.yy.c y.tab.c -o lex.exe
+	gcc lex.yy.c y.tab.c cmd.c -o lex.exe -g -ll
 
 clean:
 	rm -f y.tab.*
@@ -18,3 +17,7 @@ clean:
 	rm -f *.exe
 	rm -f *.o
 	rm -f *.out
+	rm -f y.output
+
+valgrind-%: %.exe
+	valgrind --leak-check=full --show-leak-kinds=all ./$<

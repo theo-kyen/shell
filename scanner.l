@@ -4,19 +4,20 @@
 %}
 
 %%
-\n		{ return NEWLINE; }
-">"		{ return GREATER_THAN; }
-"<"		{ return LESS_THAN; }
-">>"	{ return GREATGREAT; }
-">&"	{ return GREATAMP; }
-"|"		{ return PIPE; }
-"&"		{ return AMP; }
+\n      { return NEWLINE; }
+">>"    { return GREATGREAT; }
+">&"    { return GREATAMP; }
+">"     { return GREATER_THAN; }
+"<"     { return LESS_THAN; }
+"|"     { return PIPE; }
+"&"     { return AMP; }
+
 [^ \t\n][^ \t\n]* {
-//	yylval->string_val = strdup(yytext); 
-	return WORD; 
+    yylval.str = strdup(yytext); 
+    return WORD; 
 }
 
-.   	{ return NONE; }
+.   {}
 %%
 
 int yywrap(void) {
