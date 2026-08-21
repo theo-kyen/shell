@@ -9,7 +9,6 @@
 
 struct simple_cmd
 {
-	char *name;
 	int num_avail_args;
 	int num_args;
 	char **args;
@@ -27,47 +26,43 @@ struct cmd
 	int bg;
 };
 
+// reverses the argument list in the given cmd
 void reverse_args(simple_cmd_t *cmd);
+// allocates more space for the argument list in the given cmd
+// returns 0 on success or 1 on failure
+int alloc_arg_space(simple_cmd_t *cmd);
 
-// inits a simple_cmd
 simple_cmd_t *simple_cmd_init()
 {
 	simple_cmd_t *cmd = (simple_cmd_t *)malloc(sizeof(simple_cmd_t));
-	cmd->name = NULL;
 	cmd->num_avail_args = 2;
 	cmd->num_args = 0;
-	cmd->args = NULL;
+	if (alloc_arg_space(cmd) > 0)
+		return NULL;
+
 	return cmd;
 }
 
 int set_simple_cmd(simple_cmd_t *cmd, char *name)
 {
-	if (cmd->name != 0)
-	{
-		printf("Error: cannot change command after already being set\n");
-		return 1;
-	}
-
-	cmd->name = name;
 	cmd->args[0] = name;
 	return 0;
 }
 
-// inserts the given arg into the given simple_cmd, grows args if necessary
 int insert_arg(simple_cmd_t *cmd, char *arg)
 {
 	if (cmd == NULL || arg == NULL)
 		return 1;
 
 	int num_args = cmd->num_args;
-	if (num_args == 0)
+	// init argument list if necessary
+	if (num_args == 0 && cmd->args == NULL)
 	{
-		cmd->args = (char **)malloc(4 * sizeof(char *));
-		if (cmd->args == NULL)
+		if (alloc_arg_space(cmd) > 0)
 			return 1;
-		cmd->args[cmd->num_avail_args] = NULL;
 	}
 
+	// copy the argument
 	char *dst = (char *)malloc((strlen(arg) + 1) * sizeof(char));
 	if (dst == NULL)
 		return 1;
@@ -75,6 +70,7 @@ int insert_arg(simple_cmd_t *cmd, char *arg)
 	cmd->args[num_args + 1] = dst;
 	cmd->num_args++;
 
+	// double argument list capacity if necessary
 	if (cmd->num_args == cmd->num_avail_args)
 	{
 		cmd->num_avail_args *= 2;
@@ -98,7 +94,7 @@ void simple_cmd_free(simple_cmd_t **_cmd)
 
 	if (cmd->args != NULL)
 	{
-		for (int i = 0; i < cmd->num_args; i++)
+		for (int i = 0; i < cmd->num_args + 1; i++)
 		{
 			free(cmd->args[i]);
 			cmd->args[i] = 0;
@@ -107,11 +103,11 @@ void simple_cmd_free(simple_cmd_t **_cmd)
 		cmd->args = 0;
 	}
 
-	cmd->name = NULL;
 	cmd->num_avail_args = 0;
 	cmd->num_args = 0;
 
 	free(cmd);
+	cmd = 0;
 	*_cmd = 0;
 }
 
@@ -202,12 +198,9 @@ void cmd_free(cmd_t **_cmd)
 	*_cmd = 0;
 }
 
-/*Start by creating a new process for each command in the pipeline and making the parent wait
-for the last command. This will allow running simple commands such as “ls -­al”.
-*/
 int simple_execute(simple_cmd_t *cmd)
 {
-	if (strcmp(cmd->name, "exit") == 0)
+	if (strcmp(cmd->args[0], "exit") == 0)
 	{
 		exit(EXIT_SUCCESS);
 	}
@@ -219,23 +212,21 @@ int simple_execute(simple_cmd_t *cmd)
 		return 1;
 	}
 
-	// child proc
+	// child process
 	if (pid == 0)
 	{
 		// printf("child\n");
-		if (cmd->name == NULL)
+		if (cmd->args[0] == NULL)
 		{
 			return 1;
 		}
 
 		reverse_args(cmd);
-		execvp(cmd->name, cmd->args);
+		execvp(cmd->args[0], cmd->args);
 	}
 
-	// parent proc
-	// printf("parent\n");
+	// parent process
 	waitpid(pid, NULL, 0);
-
 	return 0;
 }
 
@@ -258,4 +249,13 @@ void reverse_args(simple_cmd_t *cmd)
 		left++;
 		right--;
 	}
+}
+
+int alloc_arg_space(simple_cmd_t *cmd)
+{
+	cmd->args = (char **)malloc(4 * sizeof(char *));
+	if (cmd->args == NULL)
+		return 1;
+	cmd->args[cmd->num_avail_args] = NULL;
+	return 0;
 }

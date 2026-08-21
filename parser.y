@@ -10,9 +10,6 @@ cmd_t *cmd;
 simple_cmd_t *simple_cmd;
 int num_simple_cmds = 0;
 
-// void y_init(void);
-// void y_free(void);
-
 void y_insert_arg(char *arg);
 void y_set_simple_cmd(char *name);
 void y_set_cmd(char *name);
@@ -89,6 +86,8 @@ void y_insert_arg(char *arg) {
  
 void y_set_simple_cmd(char *name) {
     /* simple_cmd_t *sim = simple_cmds[num_simple_cmds]; */
+    if (simple_cmd == NULL)
+        simple_cmd = simple_cmd_init();
     set_simple_cmd(simple_cmd, name);
     num_simple_cmds++;
 }
@@ -109,14 +108,11 @@ int y_execute() {
     }
 
     simple_execute(simple_cmd);
-
-    if (execute(cmd) > 0) {
-        y_cmd_free();
-    }
 }
 
 void y_cmd_free() {
-    cmd_free(&cmd);
+    simple_cmd_free(&simple_cmd);
+    simple_cmd = 0;
 }
 
 void yyerror(const char *s) {
