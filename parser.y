@@ -34,6 +34,7 @@ void y_cmd_free();
 cmd_list:   cmd_list cmd_line {
                 y_execute();
                 y_cmd_free();
+                printf("$ ");
             }
             |
             ;
@@ -73,6 +74,8 @@ cmd_line:   pipe_list io_mod_list bg NEWLINE
 
 %%
 int main(void) {
+    // TODO: check if there are arguments to run, if so, run them and exit
+    printf("$ ");
     yyparse();
 }
 
@@ -88,6 +91,7 @@ void y_set_simple_cmd(char *name) {
     /* simple_cmd_t *sim = simple_cmds[num_simple_cmds]; */
     if (simple_cmd == NULL)
         simple_cmd = simple_cmd_init();
+        
     set_simple_cmd(simple_cmd, name);
     num_simple_cmds++;
 }
@@ -103,9 +107,8 @@ void y_set_cmd(char *name) {
 }
 
 int y_execute() {
-    if (cmd == NULL) {
-        cmd = cmd_init();
-    }
+    if (simple_cmd == NULL)
+        simple_cmd = simple_cmd_init();
 
     simple_execute(simple_cmd);
 }

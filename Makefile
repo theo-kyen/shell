@@ -3,13 +3,10 @@ OBJ = cmd.o
 %.o: %.c
 	gcc -c -o $@ $< -g
 
-make: $(OBJ)
-	gcc main.c -o main.exe $^ -g
-
-lex:
+make:
 	yacc -v -d parser.y -Wcounterexamples
 	lex scanner.l
-	gcc lex.yy.c y.tab.c cmd.c -o lex.exe -g -ll
+	gcc lex.yy.c y.tab.c cmd.c -o main.exe -g -ll
 
 clean:
 	rm -f y.tab.*

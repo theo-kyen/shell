@@ -12,10 +12,18 @@
 "|"     { return PIPE; }
 "&"     { return AMP; }
 
-[^ \t\n][^ \t\n]* {
+[ \t] {}
+
+\"[^\"]*\" {
     yylval.str = strdup(yytext); 
     return WORD; 
 }
+
+[^ \t\n\|><&\""][^ \t\n\|><&\""]* {
+    yylval.str = strdup(yytext); 
+    return WORD; 
+}
+
 
 .   {}
 %%

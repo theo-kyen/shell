@@ -1,3 +1,5 @@
+#include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +18,6 @@ struct simple_cmd
 
 struct cmd
 {
-	char *name;
 	int num_avail_simple_cmds;
 	int num_simple_cmds;
 	simple_cmd_t **simple_cmds;
@@ -28,9 +29,12 @@ struct cmd
 
 // reverses the argument list in the given cmd
 void reverse_args(simple_cmd_t *cmd);
-// allocates more space for the argument list in the given cmd
-// returns 0 on success or 1 on failure
+// allocates initial space for the argument list in the given cmd
+// returns 0 on success and 1 on failure
 int alloc_arg_space(simple_cmd_t *cmd);
+// allocates initial space for the simple_cmd list in the given cmd
+// returns 0 on success and 1 on failure
+int alloc_cmd_space(cmd_t *cmd);
 
 simple_cmd_t *simple_cmd_init()
 {
@@ -62,6 +66,18 @@ int insert_arg(simple_cmd_t *cmd, char *arg)
 			return 1;
 	}
 
+	// double argument list capacity if necessary
+	if (cmd->num_args == cmd->num_avail_args)
+	{
+		cmd->num_avail_args *= 2;
+		size_t size = cmd->num_avail_args + 2;
+		char **temp = realloc(cmd->args, size * sizeof(char *));
+		if (temp == NULL)
+			return 1;
+		cmd->args = temp;
+		cmd->args[cmd->num_avail_args] = NULL;
+	}
+
 	// copy the argument
 	char *dst = (char *)malloc((strlen(arg) + 1) * sizeof(char));
 	if (dst == NULL)
@@ -69,18 +85,6 @@ int insert_arg(simple_cmd_t *cmd, char *arg)
 	strcpy(dst, arg);
 	cmd->args[num_args + 1] = dst;
 	cmd->num_args++;
-
-	// double argument list capacity if necessary
-	if (cmd->num_args == cmd->num_avail_args)
-	{
-		cmd->num_avail_args *= 2;
-		size_t size = cmd->num_avail_args + 1;
-		char **temp = realloc(cmd->args, size * sizeof(char *));
-		if (temp == NULL)
-			return 1;
-		cmd->args = temp;
-		cmd->args[cmd->num_avail_args] = NULL;
-	}
 
 	return 0;
 }
@@ -116,7 +120,6 @@ cmd_t *cmd_init()
 {
 	cmd_t *cmd = (cmd_t *)malloc(sizeof(cmd_t));
 
-	cmd->name = NULL;
 	cmd->num_avail_simple_cmds = 2;
 	cmd->num_simple_cmds = 0;
 	cmd->simple_cmds = NULL;
@@ -130,13 +133,13 @@ cmd_t *cmd_init()
 
 int set_cmd(cmd_t *cmd, char *name)
 {
-	if (cmd->name != 0)
-	{
-		printf("Error: cannot change command after already being set\n");
-		return 1;
-	}
+	// if (cmd->name != 0)
+	// {
+	// 	printf("Error: cannot change command after already being set\n");
+	// 	return 1;
+	// }
 
-	cmd->name = name;
+	// cmd->name = name;
 	return 0;
 }
 
@@ -186,7 +189,6 @@ void cmd_free(cmd_t **_cmd)
 		cmd->simple_cmds = 0;
 	}
 
-	cmd->name = NULL;
 	cmd->num_avail_simple_cmds = 0;
 	cmd->num_simple_cmds = 0;
 	cmd->out_file = 0;
@@ -222,12 +224,19 @@ int simple_execute(simple_cmd_t *cmd)
 		}
 
 		reverse_args(cmd);
-		execvp(cmd->args[0], cmd->args);
+		if (execvp(cmd->args[0], cmd->args) < 0)
+		{
+			perror("Error in running command");
+			simple_cmd_free(&cmd);
+			exit(1);
+		}
 	}
-
-	// parent process
-	waitpid(pid, NULL, 0);
-	return 0;
+	else
+	{
+		// parent process
+		waitpid(pid, NULL, 0);
+		return 0;
+	}
 }
 
 int execute(cmd_t *cmd)
@@ -254,8 +263,11 @@ void reverse_args(simple_cmd_t *cmd)
 int alloc_arg_space(simple_cmd_t *cmd)
 {
 	cmd->args = (char **)malloc(4 * sizeof(char *));
-	if (cmd->args == NULL)
-		return 1;
-	cmd->args[cmd->num_avail_args] = NULL;
-	return 0;
+	return cmd->args == NULL;
+}
+
+int alloc_cmd_space(cmd_t *cmd)
+{
+	cmd->simple_cmds = (simple_cmd_t **)malloc(2 * sizeof(simple_cmd_t *));
+	return cmd->simple_cmds == NULL;
 }
