@@ -223,7 +223,6 @@ int simple_execute(simple_cmd_t *cmd)
 			return 1;
 		}
 
-		reverse_args(cmd);
 		if (execvp(cmd->args[0], cmd->args) < 0)
 		{
 			perror("Error in running command");
@@ -242,22 +241,6 @@ int simple_execute(simple_cmd_t *cmd)
 int execute(cmd_t *cmd)
 {
 	return 0;
-}
-
-void reverse_args(simple_cmd_t *cmd)
-{
-	char **left = cmd->args + 1;
-	char **right = cmd->args + cmd->num_args;
-	char *temp;
-
-	while (left < right)
-	{
-		temp = *left;
-		*left = *right;
-		*right = temp;
-		left++;
-		right--;
-	}
 }
 
 int alloc_arg_space(simple_cmd_t *cmd)

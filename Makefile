@@ -16,5 +16,5 @@ clean:
 	rm -f *.out
 	rm -f y.output
 
-valgrind-%: %.exe
+valgrind: main.exe
 	valgrind --leak-check=full --show-leak-kinds=all ./$<

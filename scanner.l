@@ -15,13 +15,13 @@
 [ \t] {}
 
 \"[^\"]*\" {
-    yylval.str = strdup(yytext); 
-    return WORD; 
+    yylval.str = strdup(yytext);
+    return WORD;
 }
 
-[^ \t\n\|><&\""][^ \t\n\|><&\""]* {
-    yylval.str = strdup(yytext); 
-    return WORD; 
+[^ \t\n\|><&\""]+ {
+    yylval.str = strdup(yytext);
+    return WORD;
 }
 
 
